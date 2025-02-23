@@ -5,14 +5,16 @@ from dotenv import load_dotenv
 from langchain_community.utilities import SQLDatabase
 from langchain_core.messages import SystemMessage
 from langchain_core.messages import HumanMessage
+from langgraph.checkpoint.memory import MemorySaver
 from langgraph.prebuilt import create_react_agent
+from langchain.memory import ChatMessageHistory
+from langchain_core.runnables.history import RunnableWithMessageHistory
 
 
 # Reading the database sql
 db = SQLDatabase.from_uri("sqlite:////home/patrick/llm_pricing/example.db")
-
 # Instance the model
-model = ChatOpenAI(model="gpt-4o-mini",temperature=0)
+model = ChatOpenAI(model="gpt-3.5-turbo-1106",temperature=0)
 
 # Instance the toolkit and insert this tools into a list
 toolkit = SQLDatabaseToolkit(db=db, llm = model)
@@ -38,19 +40,23 @@ Existing tables:
 
 orders (retailer ID, store ID, customer ID, timestamp, product ID, quantity, regular price, sale price) .
 products  (retailer ID, store ID, product ID, product name, product description, category name, department name)
+computed_product_elasticities (product ID, price type, elasticity) -> tores the elasticity per product (price_type can be “regular_price” or “sale_price”)
+computed_customer_elasticities (customer ID, price type, elasticity) -> tores the elasticity per customer (price_type can be “regular_price” or “sale_price”)
+computed_c_p_elasticities (customer ID, product ID, price type, elasticity) -> tores the elasticity per customer per product (price_type can be “regular_price” or “sale_price”)
 
 """
 
 system_message = SystemMessage(content=SQL_PREFIX)
-
+memory = MemorySaver()
 # Creating the agent
-agent_executor = create_react_agent(model, tools, messages_modifier=system_message)
+agent_executor = create_react_agent(model, tools, messages_modifier=system_message, checkpointer=memory)
+config = {"configurable": {"thread_id": "abc123"}}
 
 # Develop the chat
 while True:
     query = input("Text:")
     for s in agent_executor.stream(
-        {"messages": [HumanMessage(content=query)]}
+        {"messages": [HumanMessage(content=query)]}, config=config
     ):
         print(s[list(s.keys())[0]]['messages'][-1].content)
         print("----")
