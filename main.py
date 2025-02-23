@@ -6,6 +6,7 @@ from langchain_community.utilities import SQLDatabase
 from langchain_core.messages import SystemMessage
 from langchain_core.messages import HumanMessage
 from typing import Optional
+from pydantic import PrivateAttr, ConfigDict
 
 # We’ll use statsmodels + pandas for OLS log-log regression
 import math
@@ -37,30 +38,35 @@ model = ChatOpenAI(model="gpt-3.5-turbo-1106", temperature=0)
 # ---------------------------------------
 # 2. The Custom Elasticity Tool
 # ---------------------------------------
+
 class ElasticityTool(BaseTool):
     """
-    A custom tool to compute price elasticity from data in the 'orders' table.
-    Uses a log-log OLS regression to estimate elasticity.
+    A custom tool to compute price elasticity from data in the 'orders' table
+    using a log-log OLS regression.
     """
 
-    # Pydantic requires type annotations for fields
+    # Pydantic / BaseTool configs
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    # The name and description must be typed for Pydantic
     name: str = "compute_elasticity"
     description: str = (
-        "Use this tool to compute the elasticity for a given product, or for a (product, customer) pair. "
-        "It runs a log-log OLS regression on the data from the 'orders' table. "
-        "Required arguments:\n"
-        " - product_id (int), optional if you only want a customer-based elasticity\n"
-        " - customer_id (int), optional if you only want a product-based elasticity\n"
-        " - price_type (str): 'regular' or 'sale' (default 'regular')\n"
-        "If both product_id and customer_id are given, it calculates elasticity for that combination.\n"
-        "If only product_id is given, it calculates elasticity across all orders of that product.\n"
-        "If only customer_id is given, it calculates elasticity for that customer across all products.\n"
+        "Use this tool to compute the elasticity for a given product or (product, customer) pair. "
+        "It runs a log-log OLS regression on 'orders' table data. "
+        "Arguments:\n"
+        " - product_id (int) optional\n"
+        " - customer_id (int) optional\n"
+        " - price_type (str) 'regular' or 'sale' (default 'regular').\n"
+        "If both product_id and customer_id, computes elasticity for that combo.\n"
+        "If only product_id, across all customers. If only customer_id, across all products.\n"
     )
 
-    # We'll need a reference to the DB, so we can pass it in at construction time
+    # Store the SQLDatabase as a private attribute (not a Pydantic field)
+    _db: SQLDatabase = PrivateAttr()
+
     def __init__(self, db: SQLDatabase, **kwargs):
         super().__init__(**kwargs)
-        self.db = db
+        self._db = db  # store DB connection as a private attribute
 
     def _run(
         self,
@@ -68,10 +74,7 @@ class ElasticityTool(BaseTool):
         customer_id: Optional[int] = None,
         price_type: str = "regular"
     ) -> str:
-        """
-        Synchronous method to query data and compute elasticity.
-        Returns a string describing the elasticity result (or an error).
-        """
+        """Sync method: builds a query, runs regression, returns elasticity as string."""
         # Validate price_type
         if price_type not in ("regular", "sale"):
             return "Error: price_type must be 'regular' or 'sale'."
@@ -92,49 +95,46 @@ class ElasticityTool(BaseTool):
         if conditions:
             where_clause = "WHERE " + " AND ".join(conditions)
 
-        # Query the needed data
+        # Build & run query
         query = f"""
-            SELECT quantity, {price_col} AS price
+            SELECT quantity, {price_col} as price
             FROM orders
             {where_clause}
         """
+        rows = run_query(self._db, query, params)
 
-        rows = run_query(self.db, query, params)
         if not rows:
             return "No matching data found to compute elasticity."
 
-        # Convert to a pandas DataFrame
+        # Convert to DataFrame
         df = pd.DataFrame(rows, columns=["quantity", "price"])
-
-        # Filter out invalid rows
+        # Filter out invalid data
         df = df[(df["quantity"] > 0) & (df["price"] > 0)].copy()
         if len(df) < 2:
             return "Not enough data points to compute elasticity (need >= 2)."
 
-        # Log transform
+        # Log-log OLS
         df["log_qty"] = df["quantity"].apply(math.log)
         df["log_price"] = df["price"].apply(math.log)
-
-        # OLS regression with statsmodels
         model_ols = smf.ols("log_qty ~ log_price", data=df).fit()
         elasticity = model_ols.params["log_price"]
 
-        info = []
+        info_parts = []
         if product_id is not None:
-            info.append(f"product_id={product_id}")
+            info_parts.append(f"product_id={product_id}")
         if customer_id is not None:
-            info.append(f"customer_id={customer_id}")
+            info_parts.append(f"customer_id={customer_id}")
 
         return (
-            f"Elasticity for ({', '.join(info)}), price_type={price_type}: "
+            f"Elasticity for ({', '.join(info_parts)}), price_type={price_type}: "
             f"{elasticity:.4f}"
         )
 
     async def _arun(self, *args, **kwargs):
-        """
-        Async version not used here; just call _run if you don't need truly async behavior.
-        """
+        """Async version; if you don't need async, you can just reuse _run."""
         return self._run(*args, **kwargs)
+
+    
 # ---------------------------------------
 # 3. Build the Standard SQL Toolkit
 # ---------------------------------------

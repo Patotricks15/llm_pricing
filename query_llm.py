@@ -12,7 +12,7 @@ from langgraph.prebuilt import create_react_agent
 db = SQLDatabase.from_uri("sqlite:////home/patrick/llm_pricing/example.db")
 
 # Instance the model
-model = ChatOpenAI(model="gpt-3.5-turbo-1106",temperature=0)
+model = ChatOpenAI(model="gpt-4o-mini",temperature=0)
 
 # Instance the toolkit and insert this tools into a list
 toolkit = SQLDatabaseToolkit(db=db, llm = model)
@@ -32,7 +32,14 @@ DO NOT make any DML statements (INSERT, UPDATE, DELETE, DROP etc.) to the databa
 
 To start you should ALWAYS look at the tables in the database to see what you can query.
 Do NOT skip this step.
-Then you should query the schema of the most relevant tables."""
+Then you should query the schema of the most relevant tables.
+
+Existing tables:
+
+orders (retailer ID, store ID, customer ID, timestamp, product ID, quantity, regular price, sale price) .
+products  (retailer ID, store ID, product ID, product name, product description, category name, department name)
+
+"""
 
 system_message = SystemMessage(content=SQL_PREFIX)
 
