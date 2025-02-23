@@ -71,7 +71,7 @@ def compute_price_elasticity(df: pd.DataFrame, price_col: str) -> float:
     # OLS regression using formula
     model = smf.ols("log_quantity ~ log_price", data=df).fit()
     elasticity = model.params["log_price"]
-    return np.abs(elasticity)
+    return elasticity
 
 def compute_elasticities():
     """
@@ -113,7 +113,7 @@ def compute_elasticities():
             cursor.execute("""
                 INSERT INTO computed_product_elasticities (product_id, price_type, elasticity)
                 VALUES (?, ?, ?);
-            """, (pid, pt, abs(elasticity_val)))
+            """, (pid, pt, elasticity_val))
 
     # Elasticity by customer
     for cid in customer_ids:
@@ -122,14 +122,14 @@ def compute_elasticities():
 
         for pt in price_types:
             try:
-                elasticity_val = np.abs(compute_price_elasticity(df_cust, pt))
+                elasticity_val = compute_price_elasticity(df_cust, pt)
             except ValueError:
                 elasticity_val = None
 
             cursor.execute("""
                 INSERT INTO computed_customer_elasticities (customer_id, price_type, elasticity)
                 VALUES (?, ?, ?);
-            """, (cid, pt, abs(elasticity_val)))
+            """, (cid, pt, elasticity_val))
 
     # Elasticity by (customer, product)
 
@@ -143,7 +143,6 @@ def compute_elasticities():
         pid = row["product_id"]
         # Filter
         df_sub = df_orders[(df_orders["customer_id"] == cid) & (df_orders["product_id"] == pid)]
-        print(df_sub)
 
         for pt in price_types:
             try:
@@ -154,7 +153,7 @@ def compute_elasticities():
             cursor.execute("""
                 INSERT INTO computed_c_p_elasticities (customer_id, product_id, price_type, elasticity)
                 VALUES (?, ?, ?, ?);
-            """, (cid, pid, pt, abs(elasticity_val)))
+            """, (cid, pid, pt, elasticity_val))
     # Commit and close connection
     conn.commit()
     conn.close()

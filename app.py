@@ -52,7 +52,7 @@ sql_agent = create_react_agent(model, sql_tools, messages_modifier=sql_system_me
 
 # Create the PricingAnalystAgent
 pricing_prefix = (
-    "You are a PricingAnalystAgent, an expert in pricing analysis and strategy. "
+    "You are a PricingAnalystAgent, an expert in microeconomics, pricing analysis and strategy, and have a knowledge about cannibalization effect. "
     "Given a question and context from a SQL query, provide a clear, concise final answer with insights and recommendations "
     "regarding pricing strategy. Do not generate SQL queries here; just analyze the provided context."
 )
@@ -90,7 +90,7 @@ png_bytes = graph.get_graph(xray=1).draw_mermaid_png()
 # Save the PNG data to a file
 with open("elasticity_graph.png", "wb") as f:
     f.write(png_bytes)
-    
+
 # REPL loop to ask questions and get final answers
 while True:
     user_question = input("Enter your question: ")

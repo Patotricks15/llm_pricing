@@ -4,6 +4,20 @@ This documentation describes the technical aspects of the Pricing Elasticity Pro
 
 ---
 
+## Elasticity Tables
+This project calculates price elasticity from the orders data and saves the results into three separate tables. Each table corresponds to a different level of analysis:
+
+* **computed_product_elasticities:**
+This table stores the elasticity for each product. For each product, elasticity is calculated based on all orders related to that product using two different price types (regular_price and sale_price). This table allows you to analyze how the demand for a product changes in response to changes in its price.
+
+* **computed_customer_elasticities:**
+This table stores the elasticity for each customer. It aggregates the behavior of a customer over all their purchases. By calculating elasticity per customer, you can understand how a particular customer's overall purchasing quantity responds to price variations, regardless of the product.
+
+* **computed_c_p_elasticities:**
+This table stores the elasticity for each combination of customer and product. It captures the responsiveness of a specific customer to the price changes of a specific product. This level of analysis is useful for personalized pricing strategies, as it reveals how different customers react to price changes on a per-product basis.
+
+Each table was designed to isolate a specific level of analysis—product-level, customer-level, and customer-product level—providing a detailed segmentation for further pricing strategy evaluation.
+
 ## Elasticity Equation
 
 Price elasticity is measured using a log-log linear regression model. The model is expressed mathematically as:
