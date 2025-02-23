@@ -1,0 +1,8 @@
+elasticity_project:
+  target: dev
+  outputs:
+    dev:
+      type: sqlite
+      threads: 1
+      database: "/home/patrick/llm_pricing/example.db"
+      schema: main
