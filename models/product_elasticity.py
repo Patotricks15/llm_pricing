@@ -8,7 +8,7 @@ def model(dbt, session):
     e retorna um dataframe com colunas: product_id, elasticity.
     """
     # 1. Ler dados da tabela "orders" referenciada no projeto dbt
-    orders_df = dbt.ref("orders").to_pandas()
+    orders_df = dbt.source("raw_data", "orders").to_pandas()
 
     # 2. Converter timestamp para datetime (se já não estiver)
     orders_df['timestamp'] = pd.to_datetime(orders_df['timestamp'])

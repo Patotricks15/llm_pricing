@@ -8,7 +8,7 @@ def model(dbt, session):
     Ou seja, vê como variações no preço do produto X para um cliente Y 
     afetam a quantidade comprada pelo mesmo cliente, ao longo do tempo.
     """
-    orders_df = dbt.ref("orders").to_pandas()
+    orders_df = dbt.source("raw_data", "orders").to_pandas()
     orders_df['timestamp'] = pd.to_datetime(orders_df['timestamp'])
     orders_df['week'] = orders_df['timestamp'].dt.to_period('W')
 

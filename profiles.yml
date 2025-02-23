@@ -1,0 +1,20 @@
+elasticity_project:
+  target: dev
+  outputs:
+    dev:
+      type: sqlite
+      driver: 'python'
+      threads: 1
+
+      # Caminho principal para o banco
+      database: "/home/patrick/llm_pricing/example.db"
+
+      # "schema" lógico que o dbt vai usar como "destination schema"
+      schema: "main"
+
+      # AQUI está a propriedade que algumas versões exigem
+      schema_directory: "/home/patrick/llm_pricing/example.db"
+
+      # Se a versão do adapter também exigir 'schemas_and_paths', inclua:
+      schemas_and_paths:
+        main: "/home/patrick/llm_pricing/example.db"

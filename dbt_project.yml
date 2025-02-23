@@ -10,4 +10,4 @@ seed-paths: ['data']
 models:
   elasticity_project:
     models:
-      materialized: view
+      materialized: ephemeral

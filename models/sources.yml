@@ -1,0 +1,9 @@
+version: 2
+
+sources:
+  - name: raw_data
+    database: "/home/patrick/llm_pricing/example.db"
+    schema: "main"
+
+    tables:
+      - name: orders
