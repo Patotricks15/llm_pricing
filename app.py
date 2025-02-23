@@ -20,13 +20,14 @@ class State(TypedDict):
 # Connect to the SQLite database
 db = SQLDatabase.from_uri("sqlite:////home/patrick/llm_pricing/example.db")
 # Instantiate the LLM
-model = ChatOpenAI(model="gpt-4o-mini", temperature=0)
+model_3_5 = ChatOpenAI(model="gpt-3.5-turbo-1106", temperature=0)
+model_4o = ChatOpenAI(model="gpt-4o-mini", temperature=0)
 # Create the SQL toolkit and get its tools
-toolkit = SQLDatabaseToolkit(db=db, llm=model)
+toolkit = SQLDatabaseToolkit(db=db, llm=model_3_5)
 sql_tools = toolkit.get_tools()
 
 
-problem_chain = LLMMathChain.from_llm(llm=model)
+problem_chain = LLMMathChain.from_llm(llm=model_3_5)
 math_tool = Tool.from_function(name="Calculator",
                 func=problem_chain.run,
                 description="Useful for when you need to answer questions  about math. This tool is only for math questions and nothing else. Only input math expressions.")
@@ -48,7 +49,7 @@ sql_prefix = (
 )
 sql_system_message = SystemMessage(content=sql_prefix)
 # Create the SQL agent
-sql_agent = create_react_agent(model, sql_tools, messages_modifier=sql_system_message)
+sql_agent = create_react_agent(model_3_5, sql_tools, messages_modifier=sql_system_message)
 
 # Create the PricingAnalystAgent
 pricing_prefix = (
@@ -58,7 +59,7 @@ pricing_prefix = (
 )
 pricing_system_message = SystemMessage(content=pricing_prefix)
 # Create the Pricing Analyst agent (no extra tools needed)
-pricing_agent = create_react_agent(model, tools=[math_tool], messages_modifier=pricing_system_message)
+pricing_agent = create_react_agent(model_4o, tools=[math_tool], messages_modifier=pricing_system_message)
 
 # Build the State Graph
 
