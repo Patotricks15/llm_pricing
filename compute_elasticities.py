@@ -115,7 +115,7 @@ def compute_elasticities():
             cursor.execute("""
                 INSERT INTO computed_product_elasticities (product_id, price_type, elasticity)
                 VALUES (?, ?, ?);
-            """, (pid, pt, elasticity_val))
+            """, (pid, pt, abs(elasticity_val)))
 
     # ----------------------------------------------------------------------------
     # ELASTICIDADE POR CLIENTE
@@ -133,7 +133,7 @@ def compute_elasticities():
             cursor.execute("""
                 INSERT INTO computed_customer_elasticities (customer_id, price_type, elasticity)
                 VALUES (?, ?, ?);
-            """, (cid, pt, elasticity_val))
+            """, (cid, pt, abs(elasticity_val)))
 
     # ----------------------------------------------------------------------------
     # ELASTICIDADE POR (CLIENTE, PRODUTO)
@@ -159,8 +159,7 @@ def compute_elasticities():
             cursor.execute("""
                 INSERT INTO computed_c_p_elasticities (customer_id, product_id, price_type, elasticity)
                 VALUES (?, ?, ?, ?);
-            """, (cid, pid, pt, elasticity_val))
-            print(elasticity_val)
+            """, (cid, pid, pt, abs(elasticity_val)))
 
     # ----------------------------------------------------------------------------
     # Comitar e encerrar
