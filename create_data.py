@@ -5,11 +5,11 @@ from datetime import datetime, timedelta
 
 def create_tables(cursor):
     """
-    Cria as tabelas no SQLite.
-    1) orders: dados de pedidos
-    2) products: dados de produtos
+    Creates the tables in SQLite.
+    1) orders: order data
+    2) products: product data
     """
-
+    # Clear existing data in orders and products tables (if any)
     cursor.execute("DELETE FROM orders;")
     cursor.execute("DELETE FROM products;")
 
@@ -41,22 +41,21 @@ def create_tables(cursor):
 
 def generate_fake_data(n_orders=1000, n_products=5, n_customers=10):
     """
-    Gera dados fake usando Faker e retorna dois arrays de tuplas:
-    1) products_data: para inserir em products
-    2) orders_data: para inserir em orders
+    Generates fake data using Faker and returns two lists of tuples:
+    1) products_data: to insert into the products table
+    2) orders_data: to insert into the orders table
 
-    Usamos poucos produtos e poucos consumidores para que haja muitas
-    combinações (mesmo consumidor comprando o mesmo produto em momentos diferentes)
-    com variação de preços.
+    We use few products and few customers so that there are many combinations 
+    (the same customer purchasing the same product at different times) with price variation.
     """
     fake = Faker('en_US')
     Faker.seed(42)
     
-    # Gerar dados de produtos (n_products fixos)
+    # Generate product data (fixed number of products)
     products_data = []
     for product_id in range(1, n_products + 1):
-        retailer_id = random.randint(1, 5)  # Exemplo: 5 retailers
-        store_id = random.randint(1, 20)    # Exemplo: 20 stores
+        retailer_id = random.randint(1, 5)  # Example: 5 retailers
+        store_id = random.randint(1, 20)    # Example: 20 stores
         product_name = f"Product_{product_id}"
         product_description = fake.sentence(nb_words=6)
         category_name = random.choice(["Electronics", "Fashion", "Food", "Books", "Toys"])
@@ -72,30 +71,30 @@ def generate_fake_data(n_orders=1000, n_products=5, n_customers=10):
             department_name
         ))
     
-    # Gerar dados de orders
+    # Generate order data
     orders_data = []
     
     end_date = datetime.now()
-    start_date = end_date - timedelta(days=730)  # ~2 anos
+    start_date = end_date - timedelta(days=730)  # Approximately 2 years
     
-    # Lista de produtos (1 a n_products)
+    # List of product IDs (from 1 to n_products)
     product_ids = [i for i in range(1, n_products + 1)]
     
     for _ in range(n_orders):
         retailer_id = random.randint(1, 5)
         store_id = random.randint(1, 20)
-        # Consumidores limitados: entre 1 e n_customers
+        # Limited customers: between 1 and n_customers
         customer_id = random.randint(1, n_customers)
         
-        # Data aleatória dentro do período de 2 anos
+        # Random date within the 2-year period
         random_date = fake.date_time_between_dates(datetime_start=start_date, datetime_end=end_date)
         
         product_id = random.choice(product_ids)
         quantity = random.randint(1, 10)
         
-        # Preço regular entre 10 e 500
+        # Regular price between 10 and 500
         regular_price = round(random.uniform(10, 500), 2)
-        # 50% de chance de ter um desconto
+        # 50% chance of a discount (sale price lower than the regular price)
         if random.random() < 0.5:
             sale_price = round(regular_price * random.uniform(0.5, 0.9), 2)
         else:
@@ -105,7 +104,7 @@ def generate_fake_data(n_orders=1000, n_products=5, n_customers=10):
             retailer_id,
             store_id,
             customer_id,
-            random_date.isoformat(),  # armazenar como texto no SQLite
+            random_date.isoformat(),  # store as text in SQLite
             product_id,
             quantity,
             regular_price,
@@ -116,9 +115,9 @@ def generate_fake_data(n_orders=1000, n_products=5, n_customers=10):
 
 def insert_data(cursor, products_data, orders_data):
     """
-    Insere os dados gerados nas tabelas products e orders.
+    Inserts the generated data into the products and orders tables.
     """
-    # Inserir produtos
+    # Insert products data
     cursor.executemany("""
         INSERT INTO products (
             product_id,
@@ -131,7 +130,7 @@ def insert_data(cursor, products_data, orders_data):
         ) VALUES (?, ?, ?, ?, ?, ?, ?);
     """, products_data)
     
-    # Inserir pedidos
+    # Insert orders data
     cursor.executemany("""
         INSERT INTO orders (
             retailer_id,
@@ -146,27 +145,27 @@ def insert_data(cursor, products_data, orders_data):
     """, orders_data)
 
 def main():
-    # 1. Conecta no SQLite (arquivo example.db)
+    # 1. Connect to SQLite (file example.db)
     conn = sqlite3.connect("/home/patrick/llm_pricing/example.db")
     cursor = conn.cursor()
     
-    # 2. Cria as tabelas (se não existirem)
+    # 2. Create the tables (if they do not exist)
     create_tables(cursor)
     
-    # 3. Gera dados fake com poucos produtos e consumidores
+    # 3. Generate fake data with few products and customers
     products_data, orders_data = generate_fake_data(
-        n_orders=1000,   # muitas ordens
-        n_products=5,    # poucos produtos
-        n_customers=10   # poucos consumidores
+        n_orders=1000,   # many orders
+        n_products=5,    # few products
+        n_customers=10   # few customers
     )
     
-    # 4. Insere dados
+    # 4. Insert data
     insert_data(cursor, products_data, orders_data)
     
-    # 5. Commit
+    # 5. Commit the transaction
     conn.commit()
     
-    # 6. Verifica rapidamente
+    # 6. Quick verification: print record counts
     cursor.execute("SELECT COUNT(*) FROM orders;")
     n_orders_db = cursor.fetchone()[0]
     print(f"Number of records in 'orders' table: {n_orders_db}")
@@ -175,7 +174,7 @@ def main():
     n_products_db = cursor.fetchone()[0]
     print(f"Number of records in 'products' table: {n_products_db}")
     
-    # 7. Fecha a conexão
+    # 7. Close the connection
     cursor.close()
     conn.close()
 

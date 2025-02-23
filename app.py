@@ -17,9 +17,6 @@ class State(TypedDict):
     sql_output: str
     final_output: str
 
-# ---------------------------
-# Create the SQLAgent
-# ---------------------------
 # Connect to the SQLite database
 db = SQLDatabase.from_uri("sqlite:////home/patrick/llm_pricing/example.db")
 # Instantiate the LLM
@@ -53,9 +50,7 @@ sql_system_message = SystemMessage(content=sql_prefix)
 # Create the SQL agent
 sql_agent = create_react_agent(model, sql_tools, messages_modifier=sql_system_message)
 
-# ---------------------------
 # Create the PricingAnalystAgent
-# ---------------------------
 pricing_prefix = (
     "You are a PricingAnalystAgent, an expert in pricing analysis and strategy. "
     "Given a question and context from a SQL query, provide a clear, concise final answer with insights and recommendations "
@@ -65,9 +60,8 @@ pricing_system_message = SystemMessage(content=pricing_prefix)
 # Create the Pricing Analyst agent (no extra tools needed)
 pricing_agent = create_react_agent(model, tools=[math_tool], messages_modifier=pricing_system_message)
 
-# ---------------------------
 # Build the State Graph
-# ---------------------------
+
 # The state graph has two nodes: "SQLAgent" and "PricingAnalyst".
 # The flow is: START -> SQLAgent -> PricingAnalyst -> END
 builder = StateGraph(State)
@@ -96,9 +90,8 @@ png_bytes = graph.get_graph(xray=1).draw_mermaid_png()
 # Save the PNG data to a file
 with open("elasticity_graph.png", "wb") as f:
     f.write(png_bytes)
-# ---------------------------
+    
 # REPL loop to ask questions and get final answers
-# ---------------------------
 while True:
     user_question = input("Enter your question: ")
     initial_state: State = {"question": user_question, "sql_output": "", "final_output": ""}
